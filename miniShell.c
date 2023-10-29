@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<sys/wait.h>
 #include<sys/types.h>
+#include<fcntl.h>
 
 #define ARGSIZE 100
 
@@ -36,8 +37,10 @@ int main(){
 	do{
 		//getline error handling
 		cmd = NULL;
-		if((cmdread = getline(&cmd, &size, stdin)) == -1) 
-			perror("command reading error"), exit(1);
+		if((cmdread = getline(&cmd, &size, stdin)) == -1){
+			perror("command reading error");
+		       	exit(1);
+		}
 		cmd[strlen(cmd)-1] = '\0';
 
 		//quit
@@ -50,6 +53,22 @@ int main(){
 			}
 			break;
 		}
+		
+		//checking if cmd is one of >, <, |
+		char* check;
+		pid_t ppid;
+		pid_t cpid;
+		if((check = strchr(cmd, '>'))!=NULL){
+		
+		}
+		else if((check = strchr(cmd, '<'))!=NULL){
+		
+		}
+		else if((check = strchr(cmd, '|'))!=NULL){
+		
+		}
+
+
 
 		//cmd parsing -> args
 		int i = 0;
