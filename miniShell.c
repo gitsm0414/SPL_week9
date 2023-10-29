@@ -56,20 +56,56 @@ int main(){
 		
 		//checking if cmd is one of >, <, |
 		char* check;
-		pid_t ppid;
-		pid_t cpid;
 		if((check = strchr(cmd, '>'))!=NULL){
 		
 		}
 		else if((check = strchr(cmd, '<'))!=NULL){
+			int i = 0;
+			ptr = strtok(cmd, " ");
+			while(ptr != NULL){
+				args[i++] = ptr;
+				ptr = strtok(NULL, " ");
+				if(*ptr == '<'){
+					i--;
+					break;
+				}
+			}
+			args[i] = NULL;
+			
+			char* filename;
+			int fd;
+			filename = strtok(NULL, " ");
+
+			if((fd = open(filename, O_RDONLY))<0){
+				perror("redirection file open error");
+				exit(1);
+			}
+			dup2(fd, STDIN_FILENO);
+			close(fd);
+
+			//path
+			sprintf(path, "/bin/%s", args[0]);
 		
+			//if child, then execute the cmd
+			if(fork() == 0){
+				int exe;
+				if((exe = execv(path, args)) == -1){
+					perror("command executing error");
+					exit(1);
+				}
+				exit(0);	
+			}
+			else //if parent, wait until child process ends
+			{ 
+				wait(&status);
+			}
+
 		}
 		else if((check = strchr(cmd, '|'))!=NULL){
 		
 		}
-
-
-
+		else
+		{
 		//cmd parsing -> args
 		int i = 0;
 		ptr = strtok(cmd, " ");
@@ -95,6 +131,12 @@ int main(){
 		{ 
 			wait(&status);
 		}
+		
+		}
+
+
+
+		
 			 
 	}while(1);
 	
