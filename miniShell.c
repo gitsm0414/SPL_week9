@@ -60,12 +60,10 @@ int main(){
 			int i = 0;
 			ptr = strtok(cmd, " ");
 			while(ptr != NULL){
+				if(*ptr == '>') break;
 				args[i++] = ptr;
 				ptr = strtok(NULL, " ");
-				if(*ptr == '>'){
-					i--;
-					break;
-				}
+				
 			}
 			args[i] = NULL;
 			
@@ -80,7 +78,7 @@ int main(){
 				int fd;
 				filename = strtok(NULL, " ");
 	
-				if((fd = open(filename, O_RDONLY))<0){
+				if((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))<0){
 					perror("redirection file open error");
 					exit(1);
 				}
@@ -100,11 +98,106 @@ int main(){
 			}
 		}
 		else if((check = strchr(cmd, '<'))!=NULL){
+			int i = 0;
+			ptr = strtok(cmd, " ");
+			while(ptr != NULL){
+				if(*ptr == '<') break;
+				args[i++] = ptr;
+				ptr = strtok(NULL, " ");
+				
+			}
+			args[i] = NULL;
+			
 			
 
+			//path
+			sprintf(path, "/bin/%s", args[0]);
+		
+			//if child, then execute the cmd
+			if(fork() == 0){
+				char* filename;
+				int fd;
+				filename = strtok(NULL, " ");
+	
+				if((fd = open(filename, O_RDONLY))<0){
+					perror("redirection file open error");
+					exit(1);
+				}
+				dup2(fd, STDIN_FILENO);
+				close(fd);
+
+				int exe;
+				if((exe = execv(path, args)) == -1){
+					perror("command executing error");
+					exit(1);
+				}
+				exit(0);	
+			}
+			else //if parent, wait until child process ends
+			{ 
+				wait(&status);
+			}
 		}
 		else if((check = strchr(cmd, '|'))!=NULL){
-		
+			int fd[2]; // File descriptors for the pipe
+    			if(pipe(fd) == -1) { // Create a pipe
+        			perror("pipe error");
+  			        exit(1);
+    			}
+			
+			int i = 0;
+			ptr = strtok(cmd, " ");
+			while(*ptr != '|'){
+				args[i++] = ptr;
+				ptr = strtok(NULL, " ");				
+			}
+			args[i] = NULL;
+	
+			//path		
+			sprintf(path, "/bin/%s", args[0]);	
+			//if child, then execute the cmd
+			if(fork() == 0){
+				close(fd[0]);
+				dup2(fd[1], STDOUT_FILENO);
+				close(fd[1]);
+
+				int exe;
+				if((exe = execv(path, args)) == -1){
+					perror("command executing error");
+					exit(1);
+				}
+				exit(0);	
+			}
+			
+
+			i = 0;
+			ptr = strtok(cmd, " ");
+			while(ptr != NULL){
+				args[i++] = ptr;
+				ptr = strtok(NULL, " ");				
+			}
+			args[i] = NULL;
+	
+			//path		
+			sprintf(path, "/bin/%s", args[0]);	
+			//if child, then execute the cmd
+			if(fork() == 0){
+				close(fd[1]);
+				dup2(fd[0], STDIN_FILENO);
+				close(fd[0]);
+				int exe;
+				if((exe = execv(path, args)) == -1){
+					perror("command executing error");
+					exit(1);
+				}
+				exit(0);	
+			}
+			close(fd[0]);
+			close(fd[1]);
+			wait(NULL);
+			wait(NULL);
+			
+				
 		}
 		else
 		{
