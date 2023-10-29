@@ -171,7 +171,7 @@ int main(){
 			
 
 			i = 0;
-			ptr = strtok(cmd, " ");
+			ptr = strtok(NULL, " ");
 			while(ptr != NULL){
 				args[i++] = ptr;
 				ptr = strtok(NULL, " ");				
